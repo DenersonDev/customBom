@@ -85,7 +85,7 @@ class CostReportWizard(models.TransientModel):
 
     def _process_bom_recursively(self, top_level_main_product_code, parent_names_path_list, 
                                 bom_to_process, current_item_level, effective_qty_multiplier, 
-                                output_rows_list):
+                                output_rows_list, use_formatting=True):
         """Processa BOM recursivamente calculando custos"""
         bom_product_record = bom_to_process.product_id if bom_to_process.product_id else bom_to_process.product_tmpl_id
         bom_product_name_formatted = self._get_string_value("[{}] {}".format(
@@ -101,6 +101,17 @@ class CostReportWizard(models.TransientModel):
         tipo_linha_produto = 'Produto Principal' if current_item_level == 1 else 'Subconjunto'
         bom_product_uom_name = self._get_string_value(bom_to_process.product_uom_id.name if bom_to_process.product_uom_id else '')
 
+        # Valores para formatação ou valores brutos
+        qty_value = effective_qty_multiplier * bom_to_process.product_qty
+        unit_cost_value = bom_product_record.standard_price if bom_product_record else 0.0
+        
+        if use_formatting:
+            qty_display = self._format_float(qty_value)
+            unit_cost_display = self._format_float(unit_cost_value)
+        else:
+            qty_display = qty_value
+            unit_cost_display = unit_cost_value
+
         product_row_part1 = [
             self._get_string_value(top_level_main_product_code),
             self._get_string_value(bom_product_record.default_code if bom_product_record else None),
@@ -110,9 +121,9 @@ class CostReportWizard(models.TransientModel):
                 self._get_string_value(bom_to_process.code),
                 self._get_string_value(bom_product_record.name if bom_product_record else None)
             )),
-            self._format_float(effective_qty_multiplier * bom_to_process.product_qty),
+            qty_display,
             bom_product_uom_name,
-            self._format_float(bom_product_record.standard_price if bom_product_record else 0.0),
+            unit_cost_display,
             "CALCULANDO...",
             '',
             tipo_linha_produto,
@@ -143,14 +154,22 @@ class CostReportWizard(models.TransientModel):
                     self._get_string_value(top_level_main_product_code),
                     self._get_string_value(bom_product_record.default_code if bom_product_record else None),
                 ]
+                
+                if use_formatting:
+                    op_cost_display = self._format_float(effective_total_op_cost)
+                    op_time_display = self._format_duration(effective_total_op_time)
+                else:
+                    op_cost_display = effective_total_op_cost
+                    op_time_display = effective_total_op_cost  # Para dados brutos, usamos o custo
+
                 op_row_part3 = [
                     '', '', '', '',
-                    self._format_float(effective_total_op_cost),
+                    op_cost_display,
                     '',
                     'Operação',
                     op_name, op_workcenter_name,
-                    self._format_duration(effective_total_op_time),
-                    self._format_float(effective_total_op_cost)
+                    op_time_display,
+                    op_cost_display
                 ]
                 op_row = op_row_part1 + op_level_columns + op_row_part3
                 output_rows_list.append(op_row)
@@ -177,7 +196,8 @@ class CostReportWizard(models.TransientModel):
                         actual_sub_bom,
                         children_display_level,
                         next_level_effective_qty,
-                        output_rows_list
+                        output_rows_list,
+                        use_formatting
                     )
                     rolled_up_cost_for_this_bom_level += cost_from_sub_assembly
                 else:
@@ -209,12 +229,22 @@ class CostReportWizard(models.TransientModel):
                         self._get_string_value(top_level_main_product_code),
                         self._get_string_value(component_product.default_code if component_product else None),
                     ]
+                    
+                    if use_formatting:
+                        qty_display = self._format_float(next_level_effective_qty)
+                        unit_cost_display = self._format_float(component_product.standard_price if component_product else 0.0)
+                        total_cost_display = self._format_float(effective_component_line_cost)
+                    else:
+                        qty_display = next_level_effective_qty
+                        unit_cost_display = component_product.standard_price if component_product else 0.0
+                        total_cost_display = effective_component_line_cost
+
                     raw_material_row_part3 = [
                         '',
-                        self._format_float(next_level_effective_qty),
+                        qty_display,
                         component_uom_name,
-                        self._format_float(component_product.standard_price if component_product else 0.0),
-                        self._format_float(effective_component_line_cost),
+                        unit_cost_display,
+                        total_cost_display,
                         last_purchase_taxes_str,
                         'Componente',
                         '', '', '', ''
@@ -225,16 +255,17 @@ class CostReportWizard(models.TransientModel):
         # Atualiza o custo total na linha do produto/subconjunto
         cost_column_index = 2 + self.max_display_levels + 4
         if product_row_index_in_output < len(output_rows_list) and len(output_rows_list[product_row_index_in_output]) > cost_column_index:
-            output_rows_list[product_row_index_in_output][cost_column_index] = self._format_float(rolled_up_cost_for_this_bom_level)
+            if use_formatting:
+                output_rows_list[product_row_index_in_output][cost_column_index] = self._format_float(rolled_up_cost_for_this_bom_level)
+            else:
+                output_rows_list[product_row_index_in_output][cost_column_index] = rolled_up_cost_for_this_bom_level
         
         return rolled_up_cost_for_this_bom_level
 
-    def generate_cost_report(self):
-        """Gera o relatório de custo detalhado"""
+    def _generate_report_data_raw(self, output_rows_list):
+        """Gera os dados do relatório sem formatação - usado pelo modelo CostReport"""
         if not self.bom_ids:
-            raise UserError(_('Selecione pelo menos um BOM para gerar o relatório.'))
-
-        csv_data_rows = []
+            return
         
         # Cabeçalho
         header_data_part1 = ['Código LdM Principal', 'Código Item']
@@ -249,7 +280,7 @@ class CostReportWizard(models.TransientModel):
             'Operação: Tempo (HH:MM:SS)', 'Operação: Custo (Detalhe)'
         ]
         header_data = header_data_part1 + header_level_cols + header_data_part3
-        csv_data_rows.append(header_data)
+        output_rows_list.append(header_data)
 
         # Processa cada BOM
         for bom_record_main in self.bom_ids:
@@ -259,11 +290,82 @@ class CostReportWizard(models.TransientModel):
             initial_multiplier = bom_record_main.product_qty if bom_record_main.product_qty > 0 else 1.0
 
             self._process_bom_recursively(
-                top_level_code, [], bom_record_main, 1, initial_multiplier, csv_data_rows
+                top_level_code, [], bom_record_main, 1, initial_multiplier, output_rows_list, use_formatting=False
             )
             
             if len(self.bom_ids) > 1 and bom_record_main != self.bom_ids[-1]:
-                csv_data_rows.append([''] * len(header_data))
+                output_rows_list.append([''] * len(header_data))
+
+    def _generate_report_data(self, output_rows_list):
+        """Gera os dados do relatório com formatação - usado para CSV"""
+        if not self.bom_ids:
+            return
+        
+        # Cabeçalho
+        header_data_part1 = ['Código LdM Principal', 'Código Item']
+        header_level_cols = []
+        for i in range(1, self.max_display_levels + 1):
+            header_level_cols.append(f'Nível {i}')
+        
+        header_data_part3 = [
+            'Ref. LdM Item', 'Qtd Item', 'Unidade de Medida', 'Custo Unit. Item',
+            'Custo Total Linha Item/LdM', 'Taxas Última Compra', 'Tipo de Linha',
+            'Operação: Nome (Detalhe)', 'Operação: Centro Trabalho (Detalhe)',
+            'Operação: Tempo (HH:MM:SS)', 'Operação: Custo (Detalhe)'
+        ]
+        header_data = header_data_part1 + header_level_cols + header_data_part3
+        output_rows_list.append(header_data)
+
+        # Processa cada BOM
+        for bom_record_main in self.bom_ids:
+            main_product_rec = bom_record_main.product_id if bom_record_main.product_id else bom_record_main.product_tmpl_id
+            top_level_code = self._get_string_value(main_product_rec.default_code if main_product_rec else None)
+            
+            initial_multiplier = bom_record_main.product_qty if bom_record_main.product_qty > 0 else 1.0
+
+            self._process_bom_recursively(
+                top_level_code, [], bom_record_main, 1, initial_multiplier, output_rows_list, use_formatting=True
+            )
+            
+            if len(self.bom_ids) > 1 and bom_record_main != self.bom_ids[-1]:
+                output_rows_list.append([''] * len(header_data))
+
+    def create_persistent_report(self):
+        """Cria um relatório persistente que pode ser visualizado em tela"""
+        if not self.bom_ids:
+            raise UserError(_('Selecione pelo menos um BOM para criar o relatório.'))
+        
+        # Cria o relatório persistente
+        cost_report = self.env['cost.report'].create({
+            'name': self.name,
+            'bom_ids': [(6, 0, self.bom_ids.ids)],
+            'max_display_levels': self.max_display_levels,
+            'include_operations': self.include_operations,
+            'include_components': self.include_components,
+            'include_taxes': self.include_taxes,
+        })
+        
+        # Gera o relatório
+        cost_report.action_generate_report()
+        
+        # Retorna para o relatório criado
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'cost.report',
+            'view_mode': 'form',
+            'res_id': cost_report.id,
+            'target': 'current',
+        }
+
+    def generate_cost_report(self):
+        """Gera o relatório de custo detalhado"""
+        if not self.bom_ids:
+            raise UserError(_('Selecione pelo menos um BOM para gerar o relatório.'))
+
+        csv_data_rows = []
+        
+        # Gera os dados do relatório
+        self._generate_report_data(csv_data_rows)
 
         # Gera CSV
         output = StringIO()

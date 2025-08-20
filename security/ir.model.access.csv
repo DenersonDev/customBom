@@ -4,3 +4,7 @@ access_custom_bom_manager,custom.bom.manager,model_custom_bom,base.group_system,
 access_custom_bom_line_user,custom.bom.line.user,model_custom_bom_line,base.group_user,1,1,1,0
 access_custom_bom_line_manager,custom.bom.line.manager,model_custom_bom_line,base.group_system,1,1,1,1
 access_cost_report_wizard_user,cost.report.wizard.user,model_cost_report_wizard,base.group_user,1,1,1,1
+access_cost_report_user,cost.report.user,model_cost_report,base.group_user,1,1,1,0
+access_cost_report_manager,cost.report.manager,model_cost_report,base.group_system,1,1,1,1
+access_cost_report_line_user,cost.report.line.user,model_cost_report_line,base.group_user,1,1,1,0
+access_cost_report_line_manager,cost.report.line.manager,model_cost_report_line,base.group_system,1,1,1,1

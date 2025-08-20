@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree View para Cost Report -->
+    <record id="view_cost_report_tree" model="ir.ui.view">
+        <field name="name">cost.report.tree</field>
+        <field name="model">cost.report</field>
+        <field name="arch" type="xml">
+            <tree string="Relatórios de Custo" decoration-info="state == 'draft'" decoration-success="state == 'generated'" decoration-muted="state == 'archived'">
+                <field name="name"/>
+                <field name="bom_ids" widget="many2many_tags"/>
+                <field name="max_display_levels"/>
+                <field name="total_cost" sum="Total Geral"/>
+                <field name="total_operations"/>
+                <field name="total_components"/>
+                <field name="total_products"/>
+                <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-success="state == 'generated'" decoration-muted="state == 'archived'"/>
+                <field name="create_date"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View para Cost Report -->
+    <record id="view_cost_report_form" model="ir.ui.view">
+        <field name="name">cost.report.form</field>
+        <field name="model">cost.report</field>
+        <field name="arch" type="xml">
+            <form string="Relatório de Custo">
+                <header>
+                    <button name="action_generate_report" string="Gerar Relatório" type="object" 
+                            class="oe_highlight" states="draft" groups="base.group_user"/>
+                    <button name="action_view_lines" string="Ver Linhas" type="object" 
+                            states="generated" groups="base.group_user"/>
+                    <button name="action_archive" string="Arquivar" type="object" 
+                            states="generated" groups="base.group_user"/>
+                    <button name="action_draft" string="Voltar para Rascunho" type="object" 
+                            states="archived" groups="base.group_user"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,generated,archived"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Nome do Relatório"/>
+                        </h1>
+                    </div>
+                    
+                    <group>
+                        <group string="Configurações">
+                            <field name="bom_ids" widget="many2many_tags"/>
+                            <field name="max_display_levels"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group string="Opções">
+                            <field name="include_operations"/>
+                            <field name="include_components"/>
+                            <field name="include_taxes"/>
+                        </group>
+                    </group>
+                    
+                    <group string="Resumo" attrs="{'invisible': [('state', '=', 'draft')]}">
+                        <group string="Totais">
+                            <field name="total_cost" widget="monetary"/>
+                            <field name="total_operations"/>
+                            <field name="total_components"/>
+                            <field name="total_products"/>
+                        </group>
+                        <group string="Informações">
+                            <field name="create_date"/>
+                            <field name="create_uid"/>
+                        </group>
+                    </group>
+                    
+                    <notebook attrs="{'invisible': [('state', '!=', 'generated')]}">
+                        <page string="Linhas do Relatório">
+                            <field name="line_ids" readonly="1">
+                                <tree>
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="bom_main_code"/>
+                                    <field name="item_code"/>
+                                    <field name="level_1"/>
+                                    <field name="level_2"/>
+                                    <field name="level_3"/>
+                                    <field name="bom_reference"/>
+                                    <field name="item_qty"/>
+                                    <field name="uom_name"/>
+                                    <field name="unit_cost_formatted"/>
+                                    <field name="total_cost_formatted"/>
+                                    <field name="line_type"/>
+                                    <field name="operation_name"/>
+                                    <field name="workcenter_name"/>
+                                    <field name="operation_time"/>
+                                    <field name="operation_cost_formatted"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View para Cost Report -->
+    <record id="view_cost_report_search" model="ir.ui.view">
+        <field name="name">cost.report.search</field>
+        <field name="model">cost.report</field>
+        <field name="arch" type="xml">
+            <search string="Relatórios de Custo">
+                <field name="name"/>
+                <field name="bom_ids"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <filter string="Rascunho" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Gerado" name="generated" domain="[('state', '=', 'generated')]"/>
+                <filter string="Arquivado" name="archived" domain="[('state', '=', 'archived')]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Empresa" name="group_company" context="{'group_by': 'company_id'}" groups="base.group_multi_company"/>
+                    <filter string="Data de Criação" name="group_create_date" context="{'group_by': 'create_date:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Tree View para Cost Report Line -->
+    <record id="view_cost_report_line_tree" model="ir.ui.view">
+        <field name="name">cost.report.line.tree</field>
+        <field name="model">cost.report.line</field>
+        <field name="arch" type="xml">
+            <tree string="Linhas do Relatório" decoration-info="line_type == 'produto_principal'" decoration-success="line_type == 'subconjunto'" decoration-warning="line_type == 'operacao'" decoration-muted="line_type == 'componente'">
+                <field name="sequence" widget="handle"/>
+                <field name="bom_main_code"/>
+                <field name="item_code"/>
+                <field name="level_1"/>
+                <field name="level_2"/>
+                <field name="level_3"/>
+                <field name="bom_reference"/>
+                <field name="item_qty"/>
+                <field name="uom_name"/>
+                <field name="unit_cost_formatted"/>
+                <field name="total_cost_formatted"/>
+                <field name="line_type"/>
+                <field name="operation_name"/>
+                <field name="workcenter_name"/>
+                <field name="operation_time"/>
+                <field name="operation_cost_formatted"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View para Cost Report Line -->
+    <record id="view_cost_report_line_form" model="ir.ui.view">
+        <field name="name">cost.report.line.form</field>
+        <field name="model">cost.report.line</field>
+        <field name="arch" type="xml">
+            <form string="Linha do Relatório">
+                <sheet>
+                    <group>
+                        <group string="Identificação">
+                            <field name="report_id"/>
+                            <field name="sequence"/>
+                            <field name="bom_main_code"/>
+                            <field name="item_code"/>
+                        </group>
+                        <group string="Hierarquia">
+                            <field name="level_1"/>
+                            <field name="level_2"/>
+                            <field name="level_3"/>
+                            <field name="level_4"/>
+                            <field name="level_5"/>
+                        </group>
+                    </group>
+                    
+                    <group>
+                        <group string="Detalhes">
+                            <field name="bom_reference"/>
+                            <field name="item_qty"/>
+                            <field name="uom_name"/>
+                            <field name="unit_cost_formatted"/>
+                            <field name="total_cost_formatted"/>
+                            <field name="purchase_taxes"/>
+                            <field name="line_type"/>
+                        </group>
+                        <group string="Operação" attrs="{'invisible': [('line_type', '!=', 'operacao')]}">
+                            <field name="operation_name"/>
+                            <field name="workcenter_name"/>
+                            <field name="operation_time"/>
+                            <field name="operation_cost_formatted"/>
+                        </group>
+                    </group>
+                    
+                    <group string="Hierarquia Completa">
+                        <field name="level_6"/>
+                        <field name="level_7"/>
+                        <field name="level_8"/>
+                        <field name="level_9"/>
+                        <field name="level_10"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action para Cost Report -->
+    <record id="action_cost_report" model="ir.actions.act_window">
+        <field name="name">Relatórios de Custo</field>
+        <field name="res_model">cost.report</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Crie seu primeiro relatório de custo!
+            </p>
+            <p>
+                Aqui você pode visualizar e gerenciar todos os relatórios de custo
+                gerados, com análise detalhada de cada linha.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu para Cost Report -->
+    <menuitem id="menu_cost_report" name="Relatórios de Custo" 
+              parent="menu_custom_bom_root" action="action_cost_report" sequence="30"/>
+
+    <!-- Botão no wizard para criar relatório persistente -->
+    <record id="view_cost_report_wizard_form_inherit" model="ir.ui.view">
+        <field name="name">cost.report.wizard.form.inherit</field>
+        <field name="model">cost.report.wizard</field>
+        <field name="inherit_id" ref="view_cost_report_wizard_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//footer" position="inside">
+                <button name="create_persistent_report" string="Criar Relatório Persistente" type="object" 
+                        class="btn-secondary" icon="fa-save"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

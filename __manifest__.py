@@ -13,6 +13,8 @@
         - Análise hierárquica de produtos e subconjuntos
         - Cálculos de custos de fabricação
         - Exportação para CSV com formatação brasileira
+        - Visualização em tela dos relatórios de custo
+        - Relatórios persistentes para análise histórica
     """,
     'author': 'Seu Nome',
     'website': 'https://www.seusite.com',
@@ -21,6 +23,7 @@
         'security/ir.model.access.csv',
         'views/custom_bom_views.xml',
         'views/cost_report_wizard_views.xml',
+        'views/cost_report_views.xml',
         'data/custom_bom_data.xml',
     ],
     'demo': [],
