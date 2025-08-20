@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Form View para o Wizard de Relatório de Custo -->
+    <record id="view_cost_report_wizard_form" model="ir.ui.view">
+        <field name="name">cost.report.wizard.form</field>
+        <field name="model">cost.report.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Relatório de Custo Detalhado">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Nome do Relatório"/>
+                        </h1>
+                    </div>
+                    
+                    <group>
+                        <group string="Configurações do Relatório">
+                            <field name="bom_ids" widget="many2many_tags"/>
+                            <field name="max_display_levels"/>
+                        </group>
+                        <group string="Opções de Inclusão">
+                            <field name="include_operations"/>
+                            <field name="include_components"/>
+                            <field name="include_taxes"/>
+                        </group>
+                    </group>
+                    
+                    <group string="Informações do Arquivo" attrs="{'invisible': [('csv_data', '=', False)]}">
+                        <field name="filename" readonly="1"/>
+                        <field name="csv_data" filename="filename" readonly="1"/>
+                    </group>
+                    
+                    <footer>
+                        <button name="generate_cost_report" string="Gerar Relatório" type="object" 
+                                class="btn-primary" icon="fa-download"/>
+                        <button string="Fechar" class="btn-secondary" special="cancel"/>
+                    </footer>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action para o Wizard -->
+    <record id="action_cost_report_wizard" model="ir.actions.act_window">
+        <field name="name">Relatório de Custo Detalhado</field>
+        <field name="res_model">cost.report.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{}</field>
+    </record>
+
+    <!-- Menu para o Wizard -->
+    <menuitem id="menu_cost_report_wizard" name="Relatório de Custo" 
+              parent="menu_custom_bom_root" action="action_cost_report_wizard" sequence="20"/>
+</odoo>

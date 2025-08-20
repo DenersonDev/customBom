@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_custom_bom_user,custom.bom.user,model_custom_bom,base.group_user,1,1,1,0
+access_custom_bom_manager,custom.bom.manager,model_custom_bom,base.group_system,1,1,1,1
+access_custom_bom_line_user,custom.bom.line.user,model_custom_bom_line,base.group_user,1,1,1,0
+access_custom_bom_line_manager,custom.bom.line.manager,model_custom_bom_line,base.group_system,1,1,1,1
+access_cost_report_wizard_user,cost.report.wizard.user,model_cost_report_wizard,base.group_user,1,1,1,1

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Sequência para numeração automática dos Custom BOMs -->
+        <record id="seq_custom_bom" model="ir.sequence">
+            <field name="name">Custom BOM</field>
+            <field name="code">custom.bom</field>
+            <field name="prefix">CBOM/</field>
+            <field name="padding">5</field>
+            <field name="number_increment">1</field>
+        </record>
+    </data>
+</odoo>

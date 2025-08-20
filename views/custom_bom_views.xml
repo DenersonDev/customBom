@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree View para Custom BOM -->
+    <record id="view_custom_bom_tree" model="ir.ui.view">
+        <field name="name">custom.bom.tree</field>
+        <field name="model">custom.bom</field>
+        <field name="arch" type="xml">
+            <tree string="Custom BOMs" decoration-info="state == 'draft'" decoration-success="state == 'confirmed'" decoration-muted="state == 'done'">
+                <field name="code"/>
+                <field name="product_id"/>
+                <field name="product_tmpl_id"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="date_created"/>
+                <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-success="state == 'confirmed'" decoration-muted="state == 'done'"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View para Custom BOM -->
+    <record id="view_custom_bom_form" model="ir.ui.view">
+        <field name="name">custom.bom.form</field>
+        <field name="model">custom.bom</field>
+        <field name="arch" type="xml">
+            <form string="Custom BOM">
+                <header>
+                    <button name="action_confirm" string="Confirmar" type="object" class="oe_highlight" 
+                            states="draft" groups="base.group_user"/>
+                    <button name="action_done" string="Concluir" type="object" class="oe_highlight" 
+                            states="confirmed" groups="base.group_user"/>
+                    <button name="action_draft" string="Voltar para Rascunho" type="object" 
+                            states="confirmed,done" groups="base.group_user"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="code" placeholder="Código do BOM"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="product_id"/>
+                            <field name="product_tmpl_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group>
+                            <field name="active"/>
+                            <field name="date_created"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Linhas BOM">
+                            <field name="bom_line_ids">
+                                <tree editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="product_id"/>
+                                    <field name="product_tmpl_id"/>
+                                    <field name="product_qty"/>
+                                    <field name="product_uom_id"/>
+                                    <field name="notes"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Observações">
+                            <field name="notes" placeholder="Adicione observações sobre este BOM..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View para Custom BOM -->
+    <record id="view_custom_bom_search" model="ir.ui.view">
+        <field name="name">custom.bom.search</field>
+        <field name="model">custom.bom</field>
+        <field name="arch" type="xml">
+            <search string="Custom BOM Search">
+                <field name="code"/>
+                <field name="product_id"/>
+                <field name="product_tmpl_id"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <filter string="Rascunho" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Confirmado" name="confirmed" domain="[('state', '=', 'confirmed')]"/>
+                <filter string="Concluído" name="done" domain="[('state', '=', 'done')]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Empresa" name="group_company" context="{'group_by': 'company_id'}" groups="base.group_multi_company"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action para Custom BOM -->
+    <record id="action_custom_bom" model="ir.actions.act_window">
+        <field name="name">Custom BOMs</field>
+        <field name="res_model">custom.bom</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Crie seu primeiro Custom BOM!
+            </p>
+            <p>
+                Este módulo permite gerenciar Bill of Materials personalizados
+                com funcionalidades específicas para suas necessidades.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Item para Custom BOM -->
+    <menuitem id="menu_custom_bom_root" name="Custom BOM" sequence="10"/>
+    
+    <menuitem id="menu_custom_bom_main" name="Custom BOMs" parent="menu_custom_bom_root" 
+              action="action_custom_bom" sequence="10"/>
+</odoo>
